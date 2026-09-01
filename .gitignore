@@ -1,0 +1,47 @@
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+
+# Large data & reference artifacts (regenerable / externally provided) -- never commit
+# Kraken2 database (the 352G .tar.gz and the ~466G extracted dir)
+database_kraken2/
+# Reference / genome FASTAs (built by prepare_zymo_genomes.R or provided externally)
+*.fasta
+*.fa
+*.fna
+
+# Timestamped auto-backups (e.g. ref/*.bak.<timestamp>)
+*.bak
+*.bak.*
+
+# Pipeline run artifacts (regenerable; never commit)
+work/
+# Per-run result tables (~10 G of read-level TSV/parquet; regenerable)
+results/
+# Logs: only the hourly progress log (written by scripts/pipeline_monitor.sh) is tracked
+logs/*
+!logs/pipeline_progress.log
+
+# Superseded files parked for manual review
+trash/
+
+# Manuscript editing: keep the live *_v2.docx, drop the pre-edit snapshots
+*.ORIG.docx
+__pycache__/
+
+# Python virtualenv for the docx tooling
+.venv/
+
+# LibreOffice lock files
+.~lock.*#
+
+# Stray default R graphics device output
+Rplots.pdf

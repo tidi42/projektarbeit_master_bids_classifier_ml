@@ -1,0 +1,16 @@
+hypothesis	claim	family	test	effect	ci_95	p_raw	p_holm_sidak	significant	note
+H1	Combined features beat BLAST-only	primary	Paired Wilcoxon (Holm-Sidak)	7.27e-06	[6.81e-06, 1.41e-05]	0.0078	0.0385	yes	""
+H2	ML beats fixed-threshold baseline	primary	Paired Wilcoxon (Holm-Sidak)	0.141	[0.108, 0.185]	0.0078	0.0385	yes	""
+H3	ML gain larger at low titration	primary	LMM method x level (lm fallback)	0.520	-	3.2e-21	<1e-16	yes	fit=lm
+H4	Tree ensembles beat linear GLM	primary	Paired Wilcoxon (Holm-Sidak)	0.016	[7.85e-03, 0.021]	0.0078	0.0385	yes	""
+H5	Margin + human features drive read-level gain	primary	Paired Wilcoxon (Holm-Sidak)	7.97e-05	[4.79e-05, 1.30e-04]	0.0078	0.0385	yes	read-level margin+human ablation; breadth measured separately as H5b (sample x taxon) [F6]
+H5b	Genome breadth helps (sample x taxon)	secondary	Paired Wilcoxon + bootstrap CI	0.012	[9.91e-03, 0.016]	0.0078	-	yes	H5 'breadth' component, measured by sample x taxon ablation [F6]
+H6	Sample x taxon aggregation beats read threshold	primary	Paired Wilcoxon (Holm-Sidak)	0.110	[0.074, 0.155]	0.0078	0.0385	yes	""
+H7	Adapter+ reads enriched in false positives	secondary	Fisher exact (deferred)	-	-	-	-	not run	DEFERRED -- experiment for later (adapter content); not run [OI T1]
+H8	Neural net not better than XGBoost	secondary	-- (dropped)	-	-	-	-	not run	DROPPED per note K -- NN excluded from the comparison
+H9	Donor random effect improves transfer	secondary	Paired Wilcoxon + bootstrap CI	5.79e-04	[-1.73e-04, 8.76e-04]	0.1484	-	no	honest donor-transfer term; species contribution decomposed as H9b; GLMM-GLM sign by source {none:+1, truth:+1, classifier:+1} -> ROBUST
+H9b_truth	Species RE contribution (truth source)	secondary	Paired Wilcoxon + bootstrap CI	0.014	[6.88e-03, 0.016]	0.0078	-	yes	species source = truth
+H9b_classifier	Species RE contribution (classifier source)	secondary	Paired Wilcoxon + bootstrap CI	0.012	[6.42e-03, 0.016]	0.0078	-	yes	species source = classifier
+H10	Generalises to an unseen taxon (LOTO vs LOEO)	secondary	Median degradation + bootstrap CI	0.037	-	-	-	yes	LOEO med=1.000, LOTO med=0.963
+H11	Truncated/unblocked reads drive false positives	secondary	Score-distribution test	-7.37e-06	-	<1e-16	-	no	FP share truncated = 0.000
+H12	Models better calibrated than fixed threshold	secondary	Brier + paired Wilcoxon	0.133	[0.126, 0.149]	0.0078	-	yes	""
