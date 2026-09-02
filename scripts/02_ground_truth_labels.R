@@ -170,6 +170,10 @@ apply_poisson_floor <- function(labels) {
   labels[, `:=`(expected_cells = en,
                 p_detect       = 1 - exp(-en),
                 indeterminate  = !is.na(en) & (1 - exp(-en)) < cfg$params$poisson_p_min)]
+  ## keep the pre-floor call: the negative barcodes have E[N] = 0, so the line below
+  ## forces every Zymo-positive control read to 'indeterminate' and the leakage
+  ## diagnostic would otherwise be zero by construction. [item 3]
+  labels[, label_prefloor := label]
   labels[label == "positive" & indeterminate == TRUE, label := "indeterminate"]
   labels[]
 }
@@ -217,14 +221,24 @@ expected_sample_taxon <- function() {
 ## for a downstream sensitivity analysis rather than RANDOMLY flagging individual
 ## reads (which was inert and unprincipled). -> work/leakage_estimates.tsv.
 estimate_leakage <- function(labels) {
+  ## Count on the PRE-floor call. Control barcodes have zero input, so p_detect = 0 and
+  ## apply_poisson_floor() reroutes all of their positives to 'indeterminate'; counting
+  ## the post-floor label returns 0 for every run regardless of the data. [item 3]
+  lab <- if ("label_prefloor" %in% names(labels)) "label_prefloor" else "label"
   runs <- unique(labels$run_id)
   out <- rbindlist(lapply(runs, function(r) {
     neg <- labels[run_id == r & titration_level == "negative"]
+    npos <- sum(neg[[lab]] == "positive")
     data.table(run_id = r,
                negative_reads         = nrow(neg),
-               negative_background    = sum(neg$label == "negative"),   # endogenous + residual human
-               negative_zymo_positive = sum(neg$label == "positive"),   # contamination / leakage FP
-               leakage_upper_bound    = if (nrow(neg)) mean(neg$label == "positive") else NA_real_)
+               negative_background    = sum(neg[[lab]] == "negative"),  # endogenous + residual human
+               negative_zymo_positive = npos,                           # contamination / leakage FP
+               leakage_upper_bound    = if (nrow(neg)) npos / nrow(neg) else NA_real_,
+               ## share of the run's own Zymo signal that reached a foreign barcode
+               leakage_vs_positive_pool = local({
+                 p <- sum(labels[run_id == r][[lab]] == "positive")
+                 if (p) npos / p else NA_real_
+               }))
   }), fill = TRUE)
   ## leakage is cutoff-DEPENDENT (built from labels) -> per-run folder. [two-run design]
   cov_path <- cfg$paths$leakage_table %||% file.path(cfg$paths$work_dir, "leakage_estimates.tsv")

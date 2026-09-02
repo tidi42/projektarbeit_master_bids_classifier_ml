@@ -83,7 +83,9 @@ cfg$paths$results_base <- cfg$paths$out_root
 ##   donor             one of cfg$params$donors  (the LOEO fold unit)  [guardrail]
 ##   barcode           ONT barcode id within the run
 ##   titration_level   one of {negative, c1..c5}
-##   concentration     input cells for the library (= cells_per_level[level]); metadata
+##   concentration     total cells spiked into the 400 uL blood/Shield mixture for the
+##                     library (= cells_per_level[level]); half of this reaches the
+##                     extraction -- see cells_per_level / extraction_eff; metadata
 ##   run_id            flow-cell / run id  -- needed to check the run<->donor
 ##                     confounder and to model cross-barcode leakage  [note L / OI 8]
 ##   fastq             absolute path to the barcode's reads (fastq[.gz])
@@ -131,7 +133,7 @@ cfg$params <- list(
   ## --- ground-truth calling via minimap2 [note A] ----------------------------
   gt_min_identity  = 0.90,   # read must align to a Zymo genome above this identity
   gt_min_coverage  = 0.80,   # fraction of read length that must align
-  gt_human_margin  = 0.0,    # positive requires zymo_score > human_score + margin (bits)
+  gt_human_margin  = 0.0,    # positive requires zymo_score > human_score + margin (residue matches)
   ## offline human depletion before classification (R2), by the SAME human-vs-Zymo
   ## COMPETITION the labeller uses: a read is dropped ('human_like') iff it aligns
   ## BETTER to human than to any Zymo member -- human_score = max(GRCh38, T2T)
@@ -182,12 +184,18 @@ cfg$params <- list(
 
   ## --- Poisson expected-copy-number floor [note H] ---------------------------
   poisson_p_min    = 0.95,  # species x level with P(>=1 genome) below this -> indeterminate
-  ## total input cells per titration level (c1 worked example = 7.88e5 in note H).
+  ## total input cells per titration level. This is the count spiked into the 400 uL
+  ## blood/Shield MIXTURE (3.94e9 cells/mL x 20 uL = 7.88e7 at c1), NOT the count that
+  ## reaches the extraction: only 200 of the 400 uL is carried forward, so cells per
+  ## extraction are half of these (3.94e7 .. 3.94e3). See extraction_eff below.
   cells_per_level  = c(c1 = 78800000, c2 = 7880000, c3 = 788000, c4 = 78800, c5 = 7880),  # [OI 3]
-  ## Unmeasured -> set to defensible rough values (C3). Only the PRODUCT matters
-  ## (combined recovery ~0.5): community-average metagenomic DNA extraction ~50%,
-  ## prepared library loaded ~in full. Kept sub-unity so we do not over-claim which
-  ## lowest-mass taxa were truly sequenceable; sweep poisson_p_min for sensitivity. [OI 3]
+  ## extraction_eff is numerically the 200-of-400 uL ALIQUOT SPLIT, not a measured
+  ## recovery: cells_per_level * 0.5 = cells entering the extraction. The floor is
+  ## therefore E[N] = cells extracted x rel_abundance and assumes complete downstream
+  ## recovery, i.e. it is an UPPER BOUND on detectability. That is the demanding choice
+  ## here, because pairs below the floor leave the recall universe rather than counting
+  ## as misses. Applying a genuine 0.5 recovery on top means a product of 0.25 and moves
+  ## 32 pairs to 'indeterminate' (sweep poisson_p_min / this product for sensitivity). [OI 3]
   extraction_eff   = 0.5,
   fraction_loaded  = 1.0,
 
